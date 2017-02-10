@@ -4,9 +4,16 @@ classdef Inductor
     %     - whether the number of turns can fit into the core;
     %     - common mode inductance across a frequency range;
     %     - differential mode inductance depending on the mechanical structure;
-    %     - winding capacitance (?)
+    %     - winding capacitance
     %     - power loss including both copper loss and core loss;
     %     - temperature rise using the power loss
+    %
+    %   `theta - the winding spanning angle on the core is also a design
+    %   parameter and in the code, it can be either optimized to minimize 
+    %   winding copper loss (minimal length) or optimized to minimize winding
+    %   capacitance (larget turn gap).
+    %
+    %   All units are in S.I. (Meter for length, second for time, etc.)
     
     properties
         % Wire
@@ -57,12 +64,26 @@ classdef Inductor
         
         function L   = CM(obj)
             % Calculate the common mode inductance
-            
+           mu0 = 4 * pi * 1e-7;
+           L   = obj.core.mu * mu0 * obj.N^2 * obj.core.Ae / obj.core.Le; 
         end
         
-        function L   = DM(obj)
+        function L   = DM(obj, theta)
             % Calculate the differential mode inductance
-            
+            % theta is the angle winding spanning across the core
+            % Effective differential mode flux path length
+            mu0  = 4 * pi * 1e-7;
+            Leff = sqrt( obj.core.OD^2 / sqrt(2) * ...
+            (theta / 4 + 1 +  sin(theta / 2)) .^2 + ...
+            obj.core.ID^2 * (theta / 4 - 1 + sin(theta / 2)) .^2 );
+            muDM = 2.5 * ( sqrt(pi / obj.core.Ae) * obj.core.Le / 2 )^1.45;
+            L    = muDM * mu0 * obj.N^2 * obj.core.Ae / Leff;
+        end
+
+        function Lw  = Length(obj, theta)
+            % Calculate the wire length
+            Lw = obj.N * sqrt( (obj.OD - obj.ID + 2 * obj.HT)^2 + ...
+            (theta * (ID + OD) / 4 / obj.N)^2 );
         end
         
         function C   = Cp(obj)
@@ -71,9 +92,9 @@ classdef Inductor
         end
         
         function P   = Loss(obj, I)
-            
+            % Combine the inductor copper loss and core loss
+            P = obj.core.Loss(I) + obj.wire.Loss(obj.Lw, I);
         end
     end
     
 end
-

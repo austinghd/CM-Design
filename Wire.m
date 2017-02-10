@@ -5,9 +5,9 @@ classdef Wire
     %   Here only round wire is considered, rectangular or copper foil is not.
     %   
     %   Type:       single conductor or Litz wire
-    %   Geometrical: 
     %     - Single: conductor diameter, insulation thickness
     %     - Litz:   effective conducting area, total diameter
+    %   Mechanical: geometry and density
     %   Electrical: conductivity or resistivity
     %   Magnetic:   relative permeability
     %   
@@ -27,10 +27,14 @@ classdef Wire
         Ae   = 6.36e-7;
         
         % The initializer is likely to take material as input. The wire 
-        % conductivity is then set accordingly.
+        % conductivity and density is then set accordingly.
         
+        % Material
+        material = 'copper';
         % Conductivity, in S/m
         sig  = 58.5e6;
+        % Density, in kg/m^3
+        rho  = 8.96e3;
         
         % Relative permeability
         mu   = 1;
@@ -47,7 +51,19 @@ classdef Wire
         function obj = Wire()
             % Initializer -- work with database group
         end
+
+        function P   = CopperLoss(obj, Lw, I)
+            % Calculate the copper loss in `Lw length wire and the current 
+            % going through it is `I.
+            % Only skin effect is considered at this point because
+            % the CM inductor winding has a single layer structure.
+
+        end
+
+        function W   = Weight(obj, Lw)
+            % Calculate the wire weight
+            W = obj.rho * obj.Ae * Lw;
+        end
     end
     
 end
-
